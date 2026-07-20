@@ -216,7 +216,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v22</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v23</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -2080,7 +2080,7 @@ $('resetConfirmBtn').onclick=()=>{
 
 /* ============ 🌐 FAMILY SYNC — shared board across all devices ============ */
 const SYNC_URL='https://shire-garden-default-rtdb.firebaseio.com/games/';
-let syncRev=0, applyingRemote=false, syncOk=null, syncQueued=null;
+let syncRev=0, applyingRemote=false, syncOk=null, syncQueued=null, syncPulledOnce=false;
 function syncEnabled(){ return !!cfg.syncCode; }
 function genSyncCode(){ let s=''; const a='abcdefghjkmnpqrstuvwxyz23456789'; for(let i=0;i<20;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
 function syncSnapshot(){
@@ -2099,6 +2099,7 @@ function queueSync(){
 }
 async function syncPush(){
   if(!syncEnabled()) return;
+  if(!syncPulledOnce) await syncPull();   // never clobber a newer family board with a stale copy
   syncRev++;
   try{
     await fetch(SYNC_URL+cfg.syncCode+'.json',{method:'PUT',body:JSON.stringify(syncSnapshot())});
@@ -2121,11 +2122,17 @@ async function syncPull(){
       chronicle=d.chronicle||[];
       saveCfg(); saveBanks(); saveState(); saveChron();
       applyingRemote=false;
+      // the pulled board may still be on last week — roll it over and share the fresh week
+      if(state && state.weekStart && mondayOf(new Date(state.weekStart)).getTime() < mondayOf(new Date()).getTime()){
+        autoRollover();
+      }
       if($('kingdomScreen').classList.contains('active')) drawMap();
     }
+    syncPulledOnce=true;
   }catch(e){ setSyncStatus(false); }
 }
 document.querySelectorAll('.shire-banner').forEach(el=>el.src=BANNER_ART);
+syncPull();
 setInterval(syncPull, 4000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncPull(); });
 // joining via a shared link: theshiregarden.../#g=CODE
