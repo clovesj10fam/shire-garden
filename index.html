@@ -78,6 +78,13 @@
   }
   .sig-btn{font-size:1.45rem; background:#f7f1de; border-radius:9px; padding:3px 8px; border:2px solid #ddd0ab;}
   .col-btn{width:34px; height:34px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 0 2px #c9b78d;}
+  .picker-pop{position:fixed; z-index:400; background:#f7efdc; border:2px solid #7a6448; border-radius:12px; padding:10px; display:grid; gap:6px; box-shadow:0 10px 28px rgba(40,28,10,.4);}
+  .picker-pop.sig{grid-template-columns:repeat(8,1fr);}
+  .picker-pop.col{grid-template-columns:repeat(5,1fr);}
+  .picker-pop button{width:34px; height:34px; border-radius:9px; border:2px solid transparent; background:#fff8ea; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;}
+  .picker-pop.col button{border-radius:50%; border:3px solid #fff; box-shadow:0 0 0 2px #c9b78d;}
+  .picker-pop button.taken{opacity:.22; pointer-events:none;}
+  .picker-pop button.cur{border-color:#7a6448; box-shadow:0 0 0 3px #b58b3c;}
   .del-btn{background:#f4d9d3; color:#a33b28; border-radius:9px; padding:7px 11px; font-weight:bold;}
   .add-btn{background:#e4eed6; color:#41682f; border-radius:10px; padding:9px 15px; font-weight:bold; font-size:.95rem; align-self:flex-start;}
   .hint{font-size:.85rem; opacity:.72; margin-top:4px;}
@@ -207,7 +214,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v20</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v21</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -287,8 +294,8 @@ const store = {
 };
 
 /* ---------- defaults ---------- */
-const SIGILS = ['🦄','🐉','🦊','🦁','🦋','⚔️','🌟','🐸'];
-const BANNERS = ['#e84a7f','#3f7fe0','#3aa655','#a55fd6','#e8842a','#2ab5a5','#c94444','#7a6bd6'];
+const SIGILS = ['🦄','🐉','🦊','🦁','🦋','⚔️','🌟','🐸','🐺','🦉','🐯','🐻','🐰','🦌','🦅','🐴','🐬','🦜','🐝','🐢','🦔','🐿️','🦢','🐞','🦩','🐙','🦖','🐧','🐼','🐨','🦚','🦇'];
+const BANNERS = ['#e84a7f','#3f7fe0','#3aa655','#a55fd6','#e8842a','#2ab5a5','#c94444','#7a6bd6','#d4a017','#1f6b3a','#274a8c','#8c2d5e','#4aa8d8','#7ab52a','#8b5a2b','#ff69b4','#5a6b7a','#f2c94c','#9c3fd6','#444444'];
 const REGIONS = [
   {key:'front', label:'The Southern Meadows (front yard)'},
   {key:'side',  label:'The Western Woods (side yard)'},
@@ -619,7 +626,29 @@ function pickDoodle(name){
 /* ============================================================
    SETUP SCREEN
    ============================================================ */
+let pickerEl=null;
+function closePicker(){ if(pickerEl){ pickerEl.remove(); pickerEl=null; document.removeEventListener('pointerdown',pickerOutside,true); } }
+function pickerOutside(e){ if(pickerEl && !pickerEl.contains(e.target)) closePicker(); }
+function openPicker(anchor,cls,items,render,isTaken,isCur,onPick){
+  closePicker();
+  const pop=document.createElement('div'); pop.className='picker-pop '+cls;
+  items.forEach(it=>{
+    const b=document.createElement('button'); b.type='button';
+    render(b,it);
+    if(isTaken(it)) b.classList.add('taken');
+    if(isCur(it)) b.classList.add('cur');
+    b.onclick=()=>{ closePicker(); onPick(it); };
+    pop.appendChild(b);
+  });
+  document.body.appendChild(pop);
+  const r=anchor.getBoundingClientRect();
+  pop.style.left=Math.max(8,Math.min(window.innerWidth-pop.offsetWidth-8,r.left))+'px';
+  pop.style.top=Math.max(8,Math.min(window.innerHeight-pop.offsetHeight-8,r.bottom+6))+'px';
+  pickerEl=pop;
+  setTimeout(()=>document.addEventListener('pointerdown',pickerOutside,true),0);
+}
 function renderSetup(){
+  closePicker();
   const pl=$('playerList'); pl.innerHTML='';
   cfg.players.forEach((p,i)=>{
     const row=document.createElement('div'); row.className='row-item';
@@ -629,16 +658,12 @@ function renderSetup(){
       <input type="text" value="${escapeHtml(p.name)}" placeholder="Gardener's name" maxlength="14">
       <button class="del-btn" title="Remove">✕</button>`;
     row.querySelector('.sig-btn').onclick=e=>{
-      const used=cfg.players.map(x=>x.sigil);
-      let idx=SIGILS.indexOf(p.sigil);
-      for(let k=1;k<=SIGILS.length;k++){ const c=SIGILS[(idx+k)%SIGILS.length]; if(!used.includes(c)||c===p.sigil){ p.sigil=c; break; } }
-      e.target.textContent=p.sigil; saveCfg();
+      const used=cfg.players.filter(x=>x!==p).map(x=>x.sigil);
+      openPicker(e.currentTarget,'sig',SIGILS,(b,s)=>{b.textContent=s;},s=>used.includes(s),s=>s===p.sigil,s=>{p.sigil=s; saveCfg(); renderSetup();});
     };
     row.querySelector('.col-btn').onclick=e=>{
-      const used=cfg.players.map(x=>x.color);
-      let idx=BANNERS.indexOf(p.color);
-      for(let k=1;k<=BANNERS.length;k++){ const c=BANNERS[(idx+k)%BANNERS.length]; if(!used.includes(c)||c===p.color){ p.color=c; break; } }
-      e.target.style.background=p.color; saveCfg();
+      const used=cfg.players.filter(x=>x!==p).map(x=>x.color);
+      openPicker(e.currentTarget,'col',BANNERS,(b,c)=>{b.style.background=c;},c=>used.includes(c),c=>c===p.color,c=>{p.color=c; saveCfg(); renderSetup();});
     };
     row.querySelector('input').oninput=e=>{ p.name=e.target.value; saveCfg(); };
     row.querySelector('.del-btn').onclick=()=>{
