@@ -193,7 +193,7 @@
   <div class="k-top">
     <div>
       <h1>🌿 The Shire Garden</h1>
-      <div class="week" id="weekLabel"></div>
+      <div class="week"><span id="syncDot" style="display:none; cursor:default;">🌐</span> <span id="weekLabel"></span></div>
     </div>
     <div>
       <button class="btn gray" id="settingsBtn">⚙️ Setup</button>
@@ -207,7 +207,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v19</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v20</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -379,10 +379,10 @@ let chronicle = [];  // [{week, rows:[{name,count,gold}], rulers:[names]}]
     saveCfg();
   }
 })();
-function saveCfg(){ store.set('kk_cfg', JSON.stringify(cfg)); }
-function saveBanks(){ store.set('kk_banks', JSON.stringify(banks)); }
-function saveState(){ store.set('kk_state', JSON.stringify(state)); }
-function saveChron(){ store.set('kk_chronicle', JSON.stringify(chronicle)); }
+function saveCfg(){ store.set('kk_cfg', JSON.stringify(cfg)); if(typeof queueSync==='function') queueSync(); }
+function saveBanks(){ store.set('kk_banks', JSON.stringify(banks)); if(typeof queueSync==='function') queueSync(); }
+function saveState(){ store.set('kk_state', JSON.stringify(state)); if(typeof queueSync==='function') queueSync(); }
+function saveChron(){ store.set('kk_chronicle', JSON.stringify(chronicle)); if(typeof queueSync==='function') queueSync(); }
 
 function bankOf(name){
   if(!banks[name] || typeof banks[name]==='number'){
@@ -1597,6 +1597,8 @@ function enterKingdom(){
   $('setupScreen').classList.remove('active');
   $('kingdomScreen').classList.add('active');
   drawMap();
+  if(syncEnabled()) syncPull();
+  setSyncStatus(syncOk===null?true:syncOk);
   const now=new Date();
   if(!cfg.practiceMode && now.getDay()===0 && now.getHours()>=17 && state.paydayPrompted!==state.weekStart){
     state.paydayPrompted=state.weekStart; saveState();
@@ -1917,6 +1919,7 @@ function renderLair(){
     </div>
     <div style="max-height:46vh; overflow-y:auto; text-align:left;">${rows}</div>
     <div class="btns">
+      <button class="btn" id="lairSyncBtn" style="background:linear-gradient(180deg,#5a9ec9,#3a7ba6); box-shadow:0 5px 0 #24567a,0 9px 14px rgba(0,0,0,.18);">${cfg.syncCode?'🌐 Family sync: ON — share the magic link':'🌐 Create the shared family board'}</button>
       <button class="btn gray" id="lairPracticeBtn">${cfg.practiceMode?'🧪 Practice mode: ON — calendar ignored':'🧪 Practice mode: OFF — weekly calendar active'}</button>
       <button class="btn gold" id="lairRebury">🎲 Re-bury chests randomly</button>
       <button class="btn" id="lairReset" style="background:linear-gradient(180deg,#c95555,#a33b3b); box-shadow:0 5px 0 #6e2525,0 9px 14px rgba(0,0,0,.18);">🔄 Reset board & totals</button>
@@ -1961,6 +1964,19 @@ function renderLair(){
   $('lairCrown').oninput=e=>{ cfg.crownBonus=Math.max(0,Math.round((parseFloat(e.target.value)||0)*100)); saveCfg(); };
   $('lairChests').oninput=e=>{ cfg.chestCount=Math.max(0,Math.min(8,parseInt(e.target.value)||0)); saveCfg(); };
   $('lairPenalty').oninput=e=>{ cfg.rejectPenalty=Math.max(0,Math.round((parseFloat(e.target.value)||0)*100)); saveCfg(); };
+  $('lairSyncBtn').onclick=()=>{
+    if(!cfg.syncCode){
+      cfg.syncCode=genSyncCode(); syncRev=0; saveCfg();
+      syncPush();
+      toast('🌐 Family board created! Share the magic link so every device joins this same game.');
+      renderLair();
+      return;
+    }
+    const link=location.origin+location.pathname+'#g='+cfg.syncCode;
+    const share=()=>{ toast('🔗 Link copied! Text it to the family — opening it joins this board.', 5000); };
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(share).catch(()=>{ prompt('Copy this family link:', link); }); }
+    else prompt('Copy this family link:', link);
+  };
   $('lairPracticeBtn').onclick=()=>{
     cfg.practiceMode=!cfg.practiceMode; saveCfg(); renderLair(); drawMap();
     toast(cfg.practiceMode?'🧪 Practice mode ON — play any day, no Sunday lock.':'📅 Practice mode OFF — Monday–Saturday weeks are back.');
@@ -2032,6 +2048,65 @@ $('resetConfirmBtn').onclick=()=>{
   toast('🔄 The Shire is reset — flags cleared, totals at $0, new treasure buried!');
   drawMap();
 };
+
+
+/* ============ 🌐 FAMILY SYNC — shared board across all devices ============ */
+const SYNC_URL='https://shire-garden-default-rtdb.firebaseio.com/games/';
+let syncRev=0, applyingRemote=false, syncOk=null, syncQueued=null;
+function syncEnabled(){ return !!cfg.syncCode; }
+function genSyncCode(){ let s=''; const a='abcdefghjkmnpqrstuvwxyz23456789'; for(let i=0;i<20;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
+function syncSnapshot(){
+  const c={...cfg}; delete c.mapArt; delete c.mapArtW; delete c.mapArtH;
+  return {cfg:c, banks, state, chronicle, rev:syncRev, ts:Date.now()};
+}
+function setSyncStatus(ok){
+  syncOk=ok;
+  const d=$('syncDot');
+  if(d){ d.style.display=syncEnabled()?'inline':'none'; d.style.opacity=ok?'1':'0.35'; d.title=ok?'Family sync connected':'Family sync offline — will retry'; }
+}
+function queueSync(){
+  if(!syncEnabled()||applyingRemote) return;
+  clearTimeout(syncQueued);
+  syncQueued=setTimeout(syncPush, 500);
+}
+async function syncPush(){
+  if(!syncEnabled()) return;
+  syncRev++;
+  try{
+    await fetch(SYNC_URL+cfg.syncCode+'.json',{method:'PUT',body:JSON.stringify(syncSnapshot())});
+    setSyncStatus(true);
+  }catch(e){ setSyncStatus(false); }
+}
+async function syncPull(){
+  if(!syncEnabled()) return;
+  try{
+    const r=await fetch(SYNC_URL+cfg.syncCode+'.json?nc='+Date.now());
+    const d=await r.json();
+    setSyncStatus(true);
+    if(d && typeof d.rev==='number' && d.rev>syncRev){
+      applyingRemote=true;
+      syncRev=d.rev;
+      const keep={mapArt:cfg.mapArt, mapArtW:cfg.mapArtW, mapArtH:cfg.mapArtH, syncCode:cfg.syncCode, artBedsAdded:true, currencyVersion:2};
+      cfg=Object.assign({}, d.cfg||{}, keep);
+      banks=d.banks||{};
+      state=d.state||state;
+      chronicle=d.chronicle||[];
+      saveCfg(); saveBanks(); saveState(); saveChron();
+      applyingRemote=false;
+      if($('kingdomScreen').classList.contains('active')) drawMap();
+    }
+  }catch(e){ setSyncStatus(false); }
+}
+setInterval(syncPull, 4000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncPull(); });
+// joining via a shared link: theshiregarden.../#g=CODE
+(function(){
+  const m=location.hash.match(/#g=([a-z0-9]{10,})/);
+  if(m && cfg.syncCode!==m[1]){
+    cfg.syncCode=m[1]; syncRev=0; saveCfg();
+    setTimeout(()=>{ syncPull(); toast('🌐 Joined the family board! Syncing…'); }, 600);
+  }
+})();
 
 /* ---------- boot ---------- */
 renderSetup();
