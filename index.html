@@ -216,7 +216,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v23</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v24</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -448,6 +448,7 @@ function autoRollover(){
   toast('🌅 A new week begins in the Shire! Fresh treasure is buried — weeding runs Monday to Saturday.', 4500);
 }
 function ensureState(){
+  if(state) normState(state);
   if(!state || !state.claims) newWeekState();
   else if(mondayOf(new Date(state.weekStart)).getTime() < mondayOf(new Date()).getTime()) autoRollover();
   // beds may have been edited — drop stale indices
@@ -1363,7 +1364,7 @@ function drawArtMap(art,W,H){
   svg+=hits+'</svg>';
   $('map').innerHTML=svg;
   $('map').querySelectorAll('[data-prov]').forEach(el=>{ el.addEventListener('click',()=>openProvince(+el.getAttribute('data-prov'))); });
-  const monN=Object.keys(state.claims).filter(k=>state.claims[k].monster).length;
+  const monN=Object.keys(state.claims).filter(k=>state.claims[k]&&state.claims[k].monster).length;
   const plN=Object.keys(state.claims).length-monN;
   $('weekLabel').textContent = weekLabelOf(state.weekStart)+' · '+plN+'/'+cfg.beds.length+' provinces conquered'+(monN?' · '+monN+' devoured by the Weed Monster 👹':'');
   renderStandings();
@@ -1577,7 +1578,7 @@ function drawMap(){
   $('map').querySelectorAll('[data-prov]').forEach(el=>{
     el.addEventListener('click', ()=>openProvince(+el.getAttribute('data-prov')));
   });
-  const monN=Object.keys(state.claims).filter(k=>state.claims[k].monster).length;
+  const monN=Object.keys(state.claims).filter(k=>state.claims[k]&&state.claims[k].monster).length;
   const plN=Object.keys(state.claims).length-monN;
   $('weekLabel').textContent = weekLabelOf(state.weekStart) + ' · ' + plN + '/' + cfg.beds.length + ' provinces conquered' + (monN?' · '+monN+' devoured by the Weed Monster 👹':'');
   renderStandings();
@@ -1588,6 +1589,7 @@ function countsFor(){
   cfg.players.forEach(p=>{ counts[p.name]=0; gold[p.name]=0; });
   Object.keys(state.claims).forEach(k=>{
     const c=state.claims[k];
+    if(!c||!c.names) return;
     c.names.forEach((nm,i)=>{
       if(counts[nm]===undefined){ counts[nm]=0; gold[nm]=0; }
       counts[nm]+=1/c.names.length;
@@ -1847,7 +1849,7 @@ $('paydayBtn').onclick=()=>{
 $('paydayCloseBtn').onclick=()=>$('paydayModal').classList.remove('show');
 function weekSummaryText(){
   const {counts,gold}=countsFor();
-  const monN=Object.keys(state.claims).filter(k=>state.claims[k].monster).length;
+  const monN=Object.keys(state.claims).filter(k=>state.claims[k]&&state.claims[k].monster).length;
   let s='🌿 The Shire Garden — '+weekLabelOf(state.weekStart)+'\n';
   cfg.players.forEach(p=>{
     const bk=bankOf(p.name);
@@ -2082,10 +2084,29 @@ $('resetConfirmBtn').onclick=()=>{
 const SYNC_URL='https://shire-garden-default-rtdb.firebaseio.com/games/';
 let syncRev=0, applyingRemote=false, syncOk=null, syncQueued=null, syncPulledOnce=false;
 function syncEnabled(){ return !!cfg.syncCode; }
+// Firebase turns numeric-keyed objects into holey arrays (with nulls). Normalize any
+// claims/treasure shape (array, 'b3'-prefixed, or plain) back to a clean numeric-keyed object.
+function normState(st){
+  if(!st) return st;
+  const claims={}, src=st.claims||{};
+  Object.keys(src).forEach(k=>{ const v=src[k]; if(v) claims[String(k).replace(/^b/,'')]=v; });
+  st.claims=claims;
+  const treasure={}, ts=st.treasure||{};
+  Object.keys(ts).forEach(k=>{ const v=ts[k]; if(v!=null) treasure[String(k).replace(/^b/,'')]=v; });
+  st.treasure=treasure;
+  return st;
+}
+// Prefix keys with 'b' when pushing so Firebase can never array-ify them again.
+function packState(st){
+  const claims={}, treasure={};
+  Object.keys(st.claims||{}).forEach(k=>{ if(st.claims[k]) claims['b'+k]=st.claims[k]; });
+  Object.keys(st.treasure||{}).forEach(k=>{ if(st.treasure[k]!=null) treasure['b'+k]=st.treasure[k]; });
+  return Object.assign({}, st, {claims, treasure});
+}
 function genSyncCode(){ let s=''; const a='abcdefghjkmnpqrstuvwxyz23456789'; for(let i=0;i<20;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
 function syncSnapshot(){
   const c={...cfg}; delete c.mapArt; delete c.mapArtW; delete c.mapArtH;
-  return {cfg:c, banks, state, chronicle, rev:syncRev, ts:Date.now()};
+  return {cfg:c, banks, state:packState(state), chronicle, rev:syncRev, ts:Date.now()};
 }
 function setSyncStatus(ok){
   syncOk=ok;
@@ -2118,7 +2139,7 @@ async function syncPull(){
       const keep={mapArt:cfg.mapArt, mapArtW:cfg.mapArtW, mapArtH:cfg.mapArtH, syncCode:cfg.syncCode, artBedsAdded:true, currencyVersion:2};
       cfg=Object.assign({}, d.cfg||{}, keep);
       banks=d.banks||{};
-      state=d.state||state;
+      state=normState(d.state||state);
       chronicle=d.chronicle||[];
       saveCfg(); saveBanks(); saveState(); saveChron();
       applyingRemote=false;
