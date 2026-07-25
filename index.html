@@ -97,6 +97,8 @@
 
   /* ------- kingdom screen ------- */
   .k-top{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+  .k-bottom{display:flex; gap:9px; justify-content:center; flex-wrap:wrap; margin:16px auto 34px; max-width:880px;}
+  .k-bottom .btn{font-size:1rem; padding:11px 16px;}
   .k-top h1{font-size:clamp(1.05rem,3.2vw,1.65rem); color:#6d4527;}
   .k-top .week{font-style:italic; font-size:.95rem; opacity:.8;}
   .k-wrap{display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;}
@@ -204,19 +206,11 @@
     <div>
       <div class="week"><span id="syncDot" style="display:none; cursor:default;">🌐</span> <span id="weekLabel"></span></div>
     </div>
-    <div>
-      <button class="btn gray" id="settingsBtn">⚙️ Setup</button>
-      <button class="btn gray" id="saveBtn" title="Save the game and download a backup file">💾 Save</button>
-      <button class="btn gray" id="loadBtn" title="Restore a saved game file">📂 Load</button>
-      <button class="btn gray" id="monsterBtn" title="???">👹</button>
-      <button class="btn gray" id="chronicleBtn">📜 Hall of Rulers</button>
-      <button class="btn gold" id="ceremonyBtn">👑 Crown Ceremony</button>
-    </div>
     <input type="file" id="loadFileInput" accept=".json,application/json" style="display:none;">
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v24</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v25</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -231,6 +225,15 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="k-bottom">
+    <button class="btn gray" id="settingsBtn">⚙️ Setup</button>
+    <button class="btn gray" id="saveBtn" title="Save the game and download a backup file">💾 Save</button>
+    <button class="btn gray" id="loadBtn" title="Restore a saved game file">📂 Load</button>
+    <button class="btn gray" id="monsterBtn" title="???">👹</button>
+    <button class="btn gray" id="chronicleBtn">📜 Hall of Rulers</button>
+    <button class="btn gold" id="ceremonyBtn">👑 Crown Ceremony</button>
   </div>
 </div>
 
