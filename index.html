@@ -230,12 +230,12 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v26</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v27</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
         <div id="standRows"></div>
-        <div class="hint" id="mapHint" style="margin-top:6px;">Weed a bed in real life, then tap its province to plant your flag! The Weed Monster inspects every province — do it well and a gold castle seals your gold. 🏰 Somewhere out there, treasure is buried… <svg viewBox="-16 -13 32 26" width="15" height="13" style="vertical-align:-2px;"><path d="M -13 -1 L 13 -1 L 13 11 L -13 11 Z" fill="#8a5a33" stroke="#3a2c17" stroke-width="1.8"/><path d="M -13 -1 Q -13 -11 0 -11 Q 13 -11 13 -1 Z" fill="#a5713f" stroke="#3a2c17" stroke-width="1.8"/><rect x="-3.2" y="-3" width="6.4" height="7.5" rx="1.2" fill="#e0b52f" stroke="#3a2c17" stroke-width="1.5"/></svg></div>
+        <div class="hint" id="mapHint" style="margin-top:6px;">Weed a bed in real life, then tap its province to plant your flag! The Weed Monster inspects every province — do it well and a gold castle seals your gold. 🏰 Somewhere out there, treasure is buried — and one province hides the $5.00 Blue Ruby Jewel! 🔷 <svg viewBox="-16 -13 32 26" width="15" height="13" style="vertical-align:-2px;"><path d="M -13 -1 L 13 -1 L 13 11 L -13 11 Z" fill="#8a5a33" stroke="#3a2c17" stroke-width="1.8"/><path d="M -13 -1 Q -13 -11 0 -11 Q 13 -11 13 -1 Z" fill="#a5713f" stroke="#3a2c17" stroke-width="1.8"/><rect x="-3.2" y="-3" width="6.4" height="7.5" rx="1.2" fill="#e0b52f" stroke="#3a2c17" stroke-width="1.5"/></svg></div>
       </div>
       <div class="standings">
         <h3 style="margin-bottom:4px;">🐷 Gold Owed</h3>
@@ -361,7 +361,7 @@ let cfg = {
   beds:    JSON.parse(JSON.stringify(DEFAULT_BEDS)),
   crownBonus: 150,      // cents ($1.50)
   rejectPenalty: 300,   // cents ($3.00) — deducted when the Weed Monster rejects work
-  chestCount: 4,
+  chestCount: 6,
   currencyVersion: 2,  // all values stored in cents, shown as dollars
 };
 let banks = {};      // name -> {unpaid, lifetime, paidOut}
@@ -379,7 +379,7 @@ let chronicle = [];  // [{week, rows:[{name,count,gold}], rulers:[names]}]
     if(!bd.fancy){ const d=DEFAULT_BEDS.find(x=>x.name===bd.name); bd.fancy=d?d.fancy:bd.name; }
     if(!bd.region) bd.region='front';
   });
-  if(cfg.chestCount===undefined) cfg.chestCount=4;
+  cfg.chestCount = Math.max(6, cfg.chestCount===undefined ? 6 : cfg.chestCount);
   // one-time migration from the old points-and-cents system to pure dollars (stored as cents)
   if(!cfg.currencyVersion){
     const cpp = cfg.centsPerPoint || 10;
@@ -443,9 +443,14 @@ function newWeekState(){
   const treasure = {};
   const idxs = cfg.beds.map((_,i)=>i);
   for(let i=idxs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i],idxs[j]]=[idxs[j],idxs[i]]; }
-  // each chest holds a random $1.00–$3.25 (quarter steps)
-  idxs.slice(0, Math.min(cfg.chestCount, idxs.length)).forEach(bi=>{ treasure[bi]=100+25*Math.floor(Math.random()*10); });
-  state = { weekStart: mondayOf(new Date()).toISOString(), claims:{}, treasure };
+  // each chest holds a random $1.50–$3.00 (quarter steps); at least 6 chests
+  const nChests = Math.min(Math.max(6, cfg.chestCount), idxs.length);
+  idxs.slice(0, nChests).forEach(bi=>{ treasure[bi]=150+25*Math.floor(Math.random()*7); });
+  // and somewhere out there sparkles the Blue Ruby Jewel — $5.00, in a chest-free bed
+  let jewelAt=null;
+  if(idxs.length>nChests){ jewelAt=idxs[nChests]; treasure[jewelAt]=500; }
+  else if(idxs.length){ jewelAt=idxs[0]; treasure[jewelAt]+=500; }
+  state = { weekStart: mondayOf(new Date()).toISOString(), claims:{}, treasure, jewelAt };
   saveState();
 }
 /* Monday morning: the old week is sealed automatically and a fresh game begins */
@@ -477,6 +482,7 @@ function ensureState(){
   // beds may have been edited — drop stale indices
   Object.keys(state.claims).forEach(k=>{ if(+k>=cfg.beds.length) delete state.claims[k]; });
   Object.keys(state.treasure||{}).forEach(k=>{ if(+k>=cfg.beds.length) delete state.treasure[k]; });
+  if(state.jewelAt!=null && state.jewelAt>=cfg.beds.length) state.jewelAt=null;
   saveState();
 }
 
@@ -1760,14 +1766,15 @@ function claimProvince(i, names){
       // record treasure into the claim's paid totals for clean undo
       state.claims[i].pts = state.claims[i].pts.map((v,k)=>v+tShares[k]);
       saveState();
+      const isJewel = (i===state.jewelAt && treasurePts>=500);
       const big = treasurePts>=275;
       body.innerHTML=`
-        <div class="chest-pop">${big?'💎':chestIcon(78)}</div>
-        <h2>${big?'JACKPOT GEM!':'TREASURE CHEST!'}</h2>
-        <p><b>${names.join(' & ')}</b> dug up buried treasure!</p>
-        <div class="pts-badge" style="font-size:1.15rem;">+${money(treasurePts)} bonus treasure! 🎉</div>
+        <div class="chest-pop">${isJewel?'🔷':(big?'💎':chestIcon(78))}</div>
+        <h2>${isJewel?'THE BLUE RUBY JEWEL!':(big?'JACKPOT GEM!':'TREASURE CHEST!')}</h2>
+        <p><b>${names.join(' & ')}</b> ${isJewel?'unearthed the legendary Blue Ruby — the rarest gem in the whole Shire!':'dug up buried treasure!'}</p>
+        <div class="pts-badge" style="font-size:1.15rem;">+${money(treasurePts)} ${isJewel?'royal jewel!':'bonus treasure!'} 🎉</div>
         <div class="btns"><button class="btn gold" id="digCloseBtn">Huzzah!</button></div>`;
-      sfx.chest(); confetti(big?170:90, true);
+      sfx.chest(); confetti(isJewel?220:(big?170:90), true);
     } else {
       body.innerHTML=`
         <div class="chest-pop">🪱</div>
@@ -1957,18 +1964,18 @@ function renderLair(){
       ${cl&&!cl.monster&&!cl.ok?`<button class="lok" data-i="${i}" title="Work done well — approve!" style="background:#dff0d3; color:#2b5424; border-radius:8px; padding:6px 10px; font-size:1rem; border:none; cursor:pointer;">✅</button>
       <button class="lno" data-i="${i}" title="Not good enough — re-weed!" style="background:#f4d9d3; color:#a33b28; border-radius:8px; padding:6px 10px; font-size:1rem; border:none; cursor:pointer;">❌</button>`:''}
       <span style="font-size:.85rem;">$</span><input type="number" class="lval" data-i="${i}" value="${(b.val/100).toFixed(2)}" step="0.25" min="0.05" style="width:68px; border:2px solid #ddd0ab; border-radius:8px; padding:5px; font-family:inherit; text-align:center;">
-      <label style="font-size:1rem;" title="Chest buried here?">${chestIcon(19)}<input type="checkbox" class="lchk" data-i="${i}" ${t?'checked':''}></label>
+      <label style="font-size:1rem;" title="${i===state.jewelAt?'The Blue Ruby Jewel is hidden here!':'Chest buried here?'}">${i===state.jewelAt&&t?'🔷':chestIcon(19)}<input type="checkbox" class="lchk" data-i="${i}" ${t?'checked':''}></label>
       <input type="number" class="lchv" data-i="${i}" value="${t?(t/100).toFixed(2):'1.00'}" step="0.25" min="0.25" style="width:68px; border:2px solid #ddd0ab; border-radius:8px; padding:5px; font-family:inherit; text-align:center; ${t?'':'opacity:.35;'}">
     </div>`;
   }).join('');
   body.innerHTML=`
     <div class="big-emoji">🌿👹</div>
     <h2>The Weed Monster's Lair</h2>
-    <p style="font-size:.88rem; opacity:.8;">Bed values, house rules & secretly buried chests — for your eyes only! 🤫 &nbsp;${chestIcon(16)} = a chest is hidden there.</p>
+    <p style="font-size:.88rem; opacity:.8;">Bed values, house rules & secretly buried chests — for your eyes only! 🤫 &nbsp;${chestIcon(16)} = a chest is hidden there · 🔷 = the $5.00 Blue Ruby Jewel!</p>
     <div class="st-row" style="gap:12px; justify-content:center; flex-wrap:wrap;">
       <label style="font-size:.9rem;">👑 Weekly crown bonus $ <input type="number" id="lairCrown" value="${(cfg.crownBonus/100).toFixed(2)}" step="0.25" min="0" max="20" style="width:70px; border:2px solid #ddd0ab; border-radius:8px; padding:5px; font-family:inherit; text-align:center;"></label>
       <label style="font-size:.9rem;">❌ Reject penalty $ <input type="number" id="lairPenalty" value="${(cfg.rejectPenalty/100).toFixed(2)}" step="0.25" min="0" max="20" style="width:70px; border:2px solid #ddd0ab; border-radius:8px; padding:5px; font-family:inherit; text-align:center;"></label>
-      <label style="font-size:.9rem;">${chestIcon(16)} Chests per week <input type="number" id="lairChests" value="${cfg.chestCount}" min="0" max="8" style="width:54px; border:2px solid #ddd0ab; border-radius:8px; padding:5px; font-family:inherit; text-align:center;"></label>
+      <label style="font-size:.9rem;">${chestIcon(16)} Chests per week (min 6) <input type="number" id="lairChests" value="${cfg.chestCount}" min="6" max="12" style="width:54px; border:2px solid #ddd0ab; border-radius:8px; padding:5px; font-family:inherit; text-align:center;"></label>
     </div>
     <div style="max-height:46vh; overflow-y:auto; text-align:left;">${rows}</div>
     <div class="btns">
@@ -2015,7 +2022,7 @@ function renderLair(){
     };
   });
   $('lairCrown').oninput=e=>{ cfg.crownBonus=Math.max(0,Math.round((parseFloat(e.target.value)||0)*100)); saveCfg(); };
-  $('lairChests').oninput=e=>{ cfg.chestCount=Math.max(0,Math.min(8,parseInt(e.target.value)||0)); saveCfg(); };
+  $('lairChests').oninput=e=>{ cfg.chestCount=Math.max(6,Math.min(12,parseInt(e.target.value)||6)); saveCfg(); };
   $('lairPenalty').oninput=e=>{ cfg.rejectPenalty=Math.max(0,Math.round((parseFloat(e.target.value)||0)*100)); saveCfg(); };
   $('lairSyncBtn').onclick=()=>{
     if(!cfg.syncCode){
@@ -2042,7 +2049,11 @@ function reburyTreasure(){
   Object.keys(state.treasure).forEach(k=>delete state.treasure[k]);
   const idxs=cfg.beds.map((_,i)=>i).filter(i=>!state.claims[i]);
   for(let i=idxs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i],idxs[j]]=[idxs[j],idxs[i]]; }
-  idxs.slice(0,Math.min(cfg.chestCount,idxs.length)).forEach(bi=>{ state.treasure[bi]=100+25*Math.floor(Math.random()*10); });
+  const nChests=Math.min(Math.max(6,cfg.chestCount),idxs.length);
+  idxs.slice(0,nChests).forEach(bi=>{ state.treasure[bi]=150+25*Math.floor(Math.random()*7); });
+  state.jewelAt=null;
+  if(idxs.length>nChests){ state.jewelAt=idxs[nChests]; state.treasure[state.jewelAt]=500; }
+  else if(idxs.length){ state.jewelAt=idxs[0]; state.treasure[state.jewelAt]+=500; }
   saveState();
 }
 
