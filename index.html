@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Shire Garden">
 <meta name="theme-color" content="#3a2c17">
 <title>🌿 The Shire Garden — The Family Weeding Game</title>
-<meta name="shire-version" content="35">
+<meta name="shire-version" content="36">
 <style>
   :root{
     --ink:#4a3a2a; --parch:#f2e8cf; --parch2:#e9dcba;
@@ -254,7 +254,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v35</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v36</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -354,9 +354,11 @@ const REGIONS = [
   {key:'far',   label:'The Eastern Marches (far side)'},
 ];
 const DEFAULT_PLAYERS = [
-  {name:'Rebecca', sigil:'🦄', color:'#e84a7f'},
-  {name:'Ben',     sigil:'🐉', color:'#3f7fe0'},
+  {name:'Rebecca', sigil:'🐝', color:'#274a8c'},
+  {name:'Ben',     sigil:'🐿️', color:'#1f6b3a'},
+  {name:'Leah',    sigil:'🐻', color:'#e84a7f'},
 ];
+const FAMILY_CODE = 'vndcn3e6gh5pfdav7wdq';  // the family board is built in — every device joins it automatically
 const DEFAULT_BEDS = [
   {name:'Magnolia Bed',           fancy:'Magnolia Blossom Meadow',      val:100, region:'front'},
   {name:'Apple Strawberry Bed',   fancy:'Strawberry-Apple Orchard',     val:100, region:'front'},
@@ -405,6 +407,8 @@ let chronicle = [];  // [{week, rows:[{name,count,gold}], rulers:[names]}]
     if(!bd.region) bd.region='front';
   });
   cfg.chestCount = Math.max(6, cfg.chestCount===undefined ? 6 : cfg.chestCount);
+  if(!cfg.syncCode) cfg.syncCode = FAMILY_CODE;   // never lose the family board, even after a storage wipe
+  if(!cfg.players || !cfg.players.length) cfg.players = JSON.parse(JSON.stringify(DEFAULT_PLAYERS));
   // one-time migration from the old points-and-cents system to pure dollars (stored as cents)
   if(!cfg.currencyVersion){
     const cpp = cfg.centsPerPoint || 10;
@@ -2286,7 +2290,7 @@ $('resetConfirmBtn').onclick=()=>{
 
 /* ============ 🌐 FAMILY SYNC — shared board across all devices ============ */
 const SYNC_URL='https://shire-garden-default-rtdb.firebaseio.com/games/';
-let syncRev=0, applyingRemote=false, syncOk=null, syncQueued=null, syncPulledOnce=false;
+var syncRev=0, applyingRemote=false, syncOk=null, syncQueued=null, syncPulledOnce=false;
 function syncEnabled(){ return !!cfg.syncCode; }
 // Firebase turns numeric-keyed objects into holey arrays (with nulls). Normalize any
 // claims/treasure shape (array, 'b3'-prefixed, or plain) back to a clean numeric-keyed object.
@@ -2341,6 +2345,7 @@ async function syncPull(){
       applyingRemote=true;
       syncRev=d.rev;
       const keep={mapArt:cfg.mapArt, mapArtW:cfg.mapArtW, mapArtH:cfg.mapArtH, syncCode:cfg.syncCode, artBedsAdded:true, currencyVersion:2};
+      if(!(d.cfg&&d.cfg.players&&d.cfg.players.length)) keep.players=cfg.players;  // players can never be synced away
       cfg=Object.assign({}, d.cfg||{}, keep);
       banks=d.banks||{};
       state=normState(d.state||state);
@@ -2381,7 +2386,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncPull
 })();
 
 /* ---------- self-updater: every device fetches new versions automatically ---------- */
-const APP_VER = 35;
+const APP_VER = 36;
 let updReloading=false;
 async function checkForUpdate(){
   if(updReloading || location.protocol==='file:') return;
