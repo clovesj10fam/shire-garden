@@ -245,11 +245,12 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v29</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v30</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
         <div id="standRows"></div>
+        <div id="lastWeek" style="display:none; margin-top:8px; padding:8px 10px; background:#efe3c0; border-radius:8px; font-size:.88rem; border:1px dashed #b8a878;"></div>
         <div class="hint" id="mapHint" style="margin-top:6px;">Weed a bed in real life, then tap its province to plant your flag! The Weed Monster inspects every province — do it well and a gold castle seals your gold. 🏰 Gold values are secret — the sprouts show the size of the quest: 🌱 quick, 🌱🌱 fair, 🌱🌱🌱 mighty. Somewhere out there, treasure is buried — and one province hides the $5.00 Blue Ruby Jewel! 🔷 <svg viewBox="-16 -13 32 26" width="15" height="13" style="vertical-align:-2px;"><path d="M -13 -1 L 13 -1 L 13 11 L -13 11 Z" fill="#8a5a33" stroke="#3a2c17" stroke-width="1.8"/><path d="M -13 -1 Q -13 -11 0 -11 Q 13 -11 13 -1 Z" fill="#a5713f" stroke="#3a2c17" stroke-width="1.8"/><rect x="-3.2" y="-3" width="6.4" height="7.5" rx="1.2" fill="#e0b52f" stroke="#3a2c17" stroke-width="1.5"/></svg></div>
       </div>
       <div class="standings">
@@ -1644,6 +1645,15 @@ function countsFor(){
   return {counts,gold};
 }
 function renderStandings(){
+  const lw=$('lastWeek');
+  if(lw){
+    if(chronicle.length){
+      const e=chronicle[0];
+      lw.innerHTML='👑 <b>Last week</b> ('+escapeHtml(e.week.replace('The Week of ',''))+'): '+
+        e.rows.map(r=>`${r.sigil} ${escapeHtml(r.name)} ⚑${r.count} +${money(r.gold)}${(e.rulers||[]).includes(r.name)?' 👑':''}`).join(' &nbsp;·&nbsp; ');
+      lw.style.display='block';
+    } else lw.style.display='none';
+  }
   const {counts,gold}=countsFor();
   const rows=$('standRows'); rows.innerHTML='';
   cfg.players.forEach(p=>{
@@ -1695,12 +1705,16 @@ function sproutsFor(i){ return '🌱'.repeat(bedTier(i)); }
 /* The Weed Monster speaks in verse: wrap any mission into a rhyming two-line decree */
 function missionPoem(m){
   const t=[
-    ['Hear ye, brave gardener — thy task is decreed:', ' — so the Weed Monster agreed!'],
-    ['A quest from the lair! So heed ye the call:', ' — go conquer it, weeds and all!'],
-    ['The Monster growls low: "No time left to play!"', ' — and glory shall come your way!'],
-    ['Sharpen thy trowel, for wild weeds spread:', ' — then off to the gold ahead!'],
-    ['By royal decree from the shadowed glen:', ' — then march ye home again!'],
-    ['A scroll unfurls with a thunderous roar:', ' — and the Shire will sing evermore!'],
+    ["The Weed Monster stirs 'neath root and stone, and sends this quest to thee alone:", " — succeed, and the glory is thine own!"],
+    ["Hark, little gardener, the wild weeds creep — a vow was made and a vow to keep:", " — then home to thy gold and a hero's sleep!"],
+    ["A growl from the lair shakes leaf and vine — the Monster has drawn a battle line:", " — stand tall, brave soul, and the day is thine!"],
+    ["Beware, beware the tangled green, the hungriest garden ever seen:", " — and scrub the Shire bright and clean!"],
+    ["By moonlit scroll and monstrous claw, this quest is sealed in garden law:", " — the finest weeding ever saw!"],
+    ["The thorns grow bold, the thistles tower — the Monster names thy finest hour:", " — go show the weeds thy gardener's power!"],
+    ["From shadowed lair to sunlit bed, a challenge rings where none dare tread:", " — then glory, gold, and feasts ahead!"],
+    ["Rise, brave knight of rake and spade, the grandest quest was ever made:", " — and let no single weed evade!"],
+    ["The Monster grumbles, fierce and deep, o'er weeds that wake and roots that creep:", " — for gold is earned and thine to keep!"],
+    ["A scroll unfurled at break of day — the Weed Monster's will is on display:", " — then triumph, treasure, and shouts hooray!"],
   ];
   let h=0; for(let k=0;k<m.length;k++) h=(h*31+m.charCodeAt(k))>>>0;
   const [l1,l2]=t[h%t.length];
@@ -1771,7 +1785,6 @@ function openProvince(i, missionAccepted){
   }
   let btns = cfg.players.map((p,k)=>
     `<button class="claim-btn" data-who="${k}" style="background:linear-gradient(180deg,${shade(p.color,15)},${p.color});">${p.sigil} ${escapeHtml(p.name)} weeded it!</button>`).join('');
-  if(cfg.players.length>1) btns+=`<button class="claim-btn" data-who="team" style="background:linear-gradient(180deg,#9d8cc9,#7a66ad);">🤝 We did it together!</button>`;
   btns+=`<button class="claim-btn" data-who="monster" style="background:linear-gradient(180deg,#6e6a5f,#4a473f);">🌿👹 The Weed Monster got it…</button>`;
   body.innerHTML=`
     <div style="height:66px;"><svg viewBox="-40 -46 80 66" style="height:66px;">${pickDoodle(b.name)}</svg></div>
