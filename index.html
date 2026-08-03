@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Shire Garden">
 <meta name="theme-color" content="#3a2c17">
 <title>🌿 The Shire Garden — The Family Weeding Game</title>
-<meta name="shire-version" content="34">
+<meta name="shire-version" content="35">
 <style>
   :root{
     --ink:#4a3a2a; --parch:#f2e8cf; --parch2:#e9dcba;
@@ -139,20 +139,28 @@
 
   /* ------- modals ------- */
   .modal.scrolly{background:transparent; border:none; outline:none; box-shadow:none; padding:16px 6px; overflow:visible;}
-  .mission-scroll{position:relative; background:
-      radial-gradient(ellipse at 18% 12%, rgba(140,105,50,.14) 0, transparent 45%),
-      radial-gradient(ellipse at 85% 88%, rgba(140,105,50,.16) 0, transparent 40%),
-      linear-gradient(180deg,#f7ecca,#efe0b4 10%,#f3e6bf 90%,#e5d2a0);
-    border-left:2px solid #c9b078; border-right:2px solid #c9b078;
-    padding:34px 26px 30px; text-align:center; color:#4a3517;
-    box-shadow:0 16px 34px rgba(40,28,8,.45), inset 0 0 40px rgba(150,115,55,.18);}
-  .mission-scroll:before,.mission-scroll:after{content:''; position:absolute; left:-14px; right:-14px; height:26px;
-    background:linear-gradient(180deg,#d9b878,#a07c3e 55%,#7c5c28); border-radius:13px;
-    box-shadow:0 4px 8px rgba(0,0,0,.4), inset 0 2px 3px rgba(255,240,200,.5);}
-  .mission-scroll:before{top:-13px;} .mission-scroll:after{bottom:-13px;}
-  .mission-title{font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif; font-weight:bold; font-size:1.3rem; color:#5d4218; letter-spacing:.5px; margin:4px 0 2px;}
-  .mission-text{font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif; font-style:italic; font-size:1.13rem; line-height:1.55; white-space:pre-wrap; margin:12px 4px; text-align:left;}
+  .mission-scroll{position:relative;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 26px, rgba(120,90,40,.05) 26px 27px),
+      radial-gradient(ellipse at 12% 8%, rgba(120,85,35,.22) 0, transparent 35%),
+      radial-gradient(ellipse at 90% 18%, rgba(120,85,35,.16) 0, transparent 30%),
+      radial-gradient(ellipse at 25% 92%, rgba(110,75,30,.20) 0, transparent 32%),
+      radial-gradient(ellipse at 78% 72%, rgba(130,95,40,.12) 0, transparent 40%),
+      radial-gradient(ellipse at 50% 50%, #f6ebc8 0, #eddcae 68%, #dbc48b 100%);
+    border-left:3px solid #b89858; border-right:3px solid #b89858;
+    padding:36px 24px 28px; text-align:center; color:#4a3517;
+    box-shadow: inset 0 0 60px rgba(120,85,30,.35), inset 0 0 12px rgba(90,60,20,.28), 0 18px 38px rgba(30,20,5,.5);}
+  .mission-scroll:before,.mission-scroll:after{content:''; position:absolute; left:-16px; right:-16px; height:30px;
+    background:linear-gradient(180deg,#e0c184,#a07c3e 50%,#6e5022 88%,#8a693a); border-radius:15px;
+    box-shadow:0 5px 10px rgba(0,0,0,.45), inset 0 2px 3px rgba(255,240,200,.55), inset 0 -3px 5px rgba(60,40,10,.4);}
+  .mission-scroll:before{top:-15px;} .mission-scroll:after{bottom:-15px;}
+  .mission-title{font-family:'Luminari','Papyrus',fantasy,'Palatino Linotype',Palatino,serif; font-weight:bold; font-size:1.5rem; color:#5d4218; letter-spacing:1px; margin:4px 0 2px; text-shadow:0 1px 0 rgba(255,245,215,.7);}
+  .mission-text{font-family:'Luminari','Papyrus','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif; font-size:1.1rem; line-height:1.6; white-space:pre-wrap; margin:14px 4px 6px;}
   .mission-seal{font-size:2rem; margin-top:2px;}
+  .wax-seal{width:54px; height:54px; margin:12px auto 2px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #d24a4a, #8c1f1f 70%, #6e1414);
+    border:3px solid #7c1a1a; display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+    box-shadow:0 4px 9px rgba(0,0,0,.45), inset 0 2px 4px rgba(255,150,150,.45);}
   .modal-bg{display:none; position:fixed; inset:0; background:rgba(60,45,25,.5); z-index:50; align-items:center; justify-content:center; padding:max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)); touch-action:none; overscroll-behavior:contain;}
   .modal-bg.show{display:flex;}
   html:has(.modal-bg.show), body:has(.modal-bg.show){overflow:hidden;}
@@ -246,7 +254,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v34</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v35</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -1742,24 +1750,24 @@ function enrichMission(m){
 }
 const POEM_FORMS=[
   ["In {P} where the shadows creep,","dark tangles wake from wicked sleep.","The scroll commands — so swear the deed:","\u0001 —","and win the gold that heroes reap!"],
-  ["When morning gilds the eastern sky,","the horns of {P} sound on high.","This quest the Monster carved in stone:","\u0001 —","ride now, brave heart, thou goest alone!"],
+  ["When morning gilds the eastern sky,","the horns of {P} sound on high.","This quest the Shire has carved in stone:","\u0001 —","ride now, brave heart, thou goest alone!"],
   ["Old roots run deep and thorns grow tall,","a green host masses at the wall.","One hope remains — so speaks the scroll:","\u0001 —","then {P} is freed, and saved are all!"],
-  ["Far over hills of tangled green,","a fouler patch was never seen.","Yet written here in monster-runes:","\u0001 —","go carve thy name in legend clean!"],
+  ["Far over hills of tangled green,","a fouler patch was never seen.","Yet written here in elder-runes:","\u0001 —","go carve thy name in legend clean!"],
   ["The moon rides pale o'er {P} fair,","but creeping things are stirring there.","Thy charge, brave soul, ere day is done:","\u0001 —","and stars shall crown thy valiant hair!"],
-  ["From lair below where growls the beast,","there comes decree from west to east:","\u0001!","Do this in {P}, sturdy knight,","and earn thy place at glory's feast!"],
-  ["Three realms of green, one path, one chance —","the thorn-spears wait with wicked lance.","The Monster's word is law this day:","\u0001 —","now to {P}! Advance! Advance!"],
+  ["From Shire-halls where the elders meet,","there comes decree from west to east:","\u0001!","Do this in {P}, sturdy knight,","and earn thy place at glory's feast!"],
+  ["Three realms of green, one path, one chance —","the thorn-spears wait with wicked lance.","The Shire's own word is law this day:","\u0001 —","now to {P}! Advance! Advance!"],
   ["No dragon's hoard, no wizard's fee","could match the gold that waits for thee.","But first the deed the scroll demands:","\u0001 —","then {P} shall sing thy victory!"],
   ["The old trees whisper, slow and wise:","'A quest! A quest!' the wind replies.","In {P} must the deed be done:","\u0001 —","go now before the daylight dies!"],
   ["Dark grows the tangle, deep the root,","the wild green marches, branch and shoot.","Stand fast! The scroll has named thy task:","\u0001 —","and thou shalt win the golden fruit!"],
-  ["A ring of weeds, one plot to free —","the fate of gardens rests with thee.","So reads the rune on monster-hide:","\u0001 —","march to {P} and victory!"],
-  ["O little warrior, swift and keen,","the bravest gardener ever seen —","the lair has spoken, hear it well:","\u0001 —","and cleanse {P} of creeping green!"],
+  ["A ring of weeds, one plot to free —","the fate of gardens rests with thee.","So reads the rune on parchment old:","\u0001 —","march to {P} and victory!"],
+  ["O little warrior, swift and keen,","the bravest gardener ever seen —","the Shire has spoken, hear it well:","\u0001 —","and cleanse {P} of creeping green!"],
   ["Beyond the gate, past hedge and stile,","the wild things grin with thorny smile.","One deed shall break their crooked reign:","\u0001 —","then rest thee proud a happy while!"],
   ["The watchtower horn sounds long and low —","in {P} walks the leafy foe.","Thy secret orders, sealed in wax:","\u0001 —","strike true, strike swift, and lay them low!"],
   ["Not every soul who leaves the door","must face what thou must face — and more!","For thee alone this scroll was penned:","\u0001 —","then {P} is thine forevermore!"],
-  ["By barrow, brook, and beacon-light,","the Monster names thy noble fight:","\u0001!","Let {P} tremble at thy step,","and bring thee gold by fall of night!"],
+  ["By barrow, brook, and beacon-light,","the Shire now names thy noble fight:","\u0001!","Let {P} tremble at thy step,","and bring thee gold by fall of night!"],
   ["The elder days have tales to tell","of heroes small who labored well.","Now write thine own in {P}'s earth:","\u0001 —","and ring the Shire's victory bell!"],
   ["Cold blows the wind from mountains grey,","the garden-realm has lost its way.","But one command can turn the tide:","\u0001 —","be thou the dawn that saves the day!"],
-  ["Nine bright stars and one old oak,","and one small knight of garden-folk!","The lair decrees, the scroll is law:","\u0001 —","reclaim {P} and all it owns!"],
+  ["Nine bright stars and one old oak,","and one small knight of garden-folk!","The Shire decrees, the scroll is law:","\u0001 —","reclaim {P} and all it owns!"],
   ["Under root and over stone,","the creeping green has claimed a throne.","Cast it down! The word is given:","\u0001 —","and {P} shall be thine own!"],
   ["The kettle sings, the hearth burns bright,","but duty calls thee to the fight!","Ere supper-time this must be done:","\u0001 —","then home to feast, victorious knight!"],
   ["A secret task, a whispered word,","by bee and bird and beetle heard:","\u0001!","Let none but thee in {P} tread","till every blade of grass is stirred!"],
@@ -1781,9 +1789,10 @@ function openProvince(i, missionAccepted){
     body.innerHTML=`
       <div class="mission-scroll">
         <div class="mission-seal">📜</div>
-        <div class="mission-title">A Mission from the Weed Monster</div>
+        <div class="mission-title">Missions from the Shire</div>
         <div style="font-size:.92rem; opacity:.75; font-style:italic;">for the province of ${escapeHtml(b.fancy||b.name)} · ${sproutsFor(i)}</div>
         <div class="mission-text" style="text-align:center;">${missionPoemHtml(mission, i).join('<br>')}</div>
+        <div class="wax-seal">🌿</div>
         <div class="btns">
           <button class="btn gold" id="missionYesBtn">⚔️ I accept this mission!</button>
           <button class="btn gray" id="missionNoBtn">🚪 Not today</button>
@@ -2372,7 +2381,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncPull
 })();
 
 /* ---------- self-updater: every device fetches new versions automatically ---------- */
-const APP_VER = 34;
+const APP_VER = 35;
 let updReloading=false;
 async function checkForUpdate(){
   if(updReloading || location.protocol==='file:') return;
