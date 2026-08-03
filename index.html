@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Shire Garden">
 <meta name="theme-color" content="#3a2c17">
 <title>🌿 The Shire Garden — The Family Weeding Game</title>
-<meta name="shire-version" content="31">
+<meta name="shire-version" content="32">
 <style>
   :root{
     --ink:#4a3a2a; --parch:#f2e8cf; --parch2:#e9dcba;
@@ -246,7 +246,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v31</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v32</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -337,8 +337,8 @@ const store = {
 };
 
 /* ---------- defaults ---------- */
-const SIGILS = ['🦄','🐉','🦊','🦁','🦋','⚔️','🌟','🐸','🐺','🦉','🐯','🐻','🐰','🦌','🦅','🐴','🐬','🦜','🐝','🐢','🦔','🐿️','🦢','🐞','🦩','🐙','🦖','🐧','🐼','🐨','🦚','🦇'];
-const BANNERS = ['#e84a7f','#3f7fe0','#3aa655','#a55fd6','#e8842a','#2ab5a5','#c94444','#7a6bd6','#d4a017','#1f6b3a','#274a8c','#8c2d5e','#4aa8d8','#7ab52a','#8b5a2b','#ff69b4','#5a6b7a','#f2c94c','#9c3fd6','#444444'];
+const SIGILS = ['🦄','🐉','🦊','🦁','🦋','⚔️','🌟','🐸','🐺','🦉','🐯','🐻','🐰','🦌','🦅','🐴','🐬','🦜','🐝','🐢','🦔','🐿️','🦢','🐞','🦩','🐙','🦖','🐧','🐼','🐨','🦚','🦇','🧙‍♂️','🧝‍♀️','🧑‍🌾','👩‍🌾','🗡️','🛡️','🏹','🪓','🏰','🐲','🌹','🌻','🌷','🌸','🌺','🌼','🍄','🦆','🐮','🐷','🦭','🦈','🐊','🐌'];
+const BANNERS = ['#e84a7f','#3f7fe0','#3aa655','#a55fd6','#e8842a','#2ab5a5','#c94444','#7a6bd6','#d4a017','#1f6b3a','#274a8c','#8c2d5e','#4aa8d8','#7ab52a','#8b5a2b','#ff69b4','#5a6b7a','#f2c94c','#9c3fd6','#444444','#1f6b6b','#d63fa0','#8c1f2f','#7a7a2a','#4b3fd6','#66c799','#b0541f','#37474f','#e88a9e','#9ecf3a','#6d3fd6','#d67a3f'];
 const REGIONS = [
   {key:'front', label:'The Southern Meadows (front yard)'},
   {key:'side',  label:'The Western Woods (side yard)'},
@@ -2289,7 +2289,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncPull
 })();
 
 /* ---------- self-updater: every device fetches new versions automatically ---------- */
-const APP_VER = 31;
+const APP_VER = 32;
 let updReloading=false;
 async function checkForUpdate(){
   if(updReloading || location.protocol==='file:') return;
