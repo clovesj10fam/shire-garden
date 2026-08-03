@@ -137,6 +137,21 @@
   .st-row .cash{color:#2b7a32; font-weight:bold;}
 
   /* ------- modals ------- */
+  .modal.scrolly{background:transparent; border:none; outline:none; box-shadow:none; padding:16px 6px; overflow:visible;}
+  .mission-scroll{position:relative; background:
+      radial-gradient(ellipse at 18% 12%, rgba(140,105,50,.14) 0, transparent 45%),
+      radial-gradient(ellipse at 85% 88%, rgba(140,105,50,.16) 0, transparent 40%),
+      linear-gradient(180deg,#f7ecca,#efe0b4 10%,#f3e6bf 90%,#e5d2a0);
+    border-left:2px solid #c9b078; border-right:2px solid #c9b078;
+    padding:34px 26px 30px; text-align:center; color:#4a3517;
+    box-shadow:0 16px 34px rgba(40,28,8,.45), inset 0 0 40px rgba(150,115,55,.18);}
+  .mission-scroll:before,.mission-scroll:after{content:''; position:absolute; left:-14px; right:-14px; height:26px;
+    background:linear-gradient(180deg,#d9b878,#a07c3e 55%,#7c5c28); border-radius:13px;
+    box-shadow:0 4px 8px rgba(0,0,0,.4), inset 0 2px 3px rgba(255,240,200,.5);}
+  .mission-scroll:before{top:-13px;} .mission-scroll:after{bottom:-13px;}
+  .mission-title{font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif; font-weight:bold; font-size:1.3rem; color:#5d4218; letter-spacing:.5px; margin:4px 0 2px;}
+  .mission-text{font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif; font-style:italic; font-size:1.13rem; line-height:1.55; white-space:pre-wrap; margin:12px 4px; text-align:left;}
+  .mission-seal{font-size:2rem; margin-top:2px;}
   .modal-bg{display:none; position:fixed; inset:0; background:rgba(60,45,25,.5); z-index:50; align-items:center; justify-content:center; padding:max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)); touch-action:none; overscroll-behavior:contain;}
   .modal-bg.show{display:flex;}
   html:has(.modal-bg.show), body:has(.modal-bg.show){overflow:hidden;}
@@ -230,7 +245,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v27</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v28</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -1668,10 +1683,30 @@ function enterKingdom(){
 /* ============================================================
    CLAIMING + TREASURE DIG
    ============================================================ */
-function openProvince(i){
+function openProvince(i, missionAccepted){
   const b=cfg.beds[i];
   const claim=state.claims[i];
   const body=$('provModalBody');
+  body.classList.remove('scrolly');
+  const mission=(b.mission||'').trim();
+  if(!claim && !isRestDay() && mission && !missionAccepted){
+    body.classList.add('scrolly');
+    body.innerHTML=`
+      <div class="mission-scroll">
+        <div class="mission-seal">📜</div>
+        <div class="mission-title">A Mission from the Weed Monster</div>
+        <div style="font-size:.92rem; opacity:.75; font-style:italic;">for the province of ${escapeHtml(b.fancy||b.name)}</div>
+        <div class="mission-text">${escapeHtml(mission)}</div>
+        <div class="btns">
+          <button class="btn gold" id="missionYesBtn">⚔️ I accept this mission!</button>
+          <button class="btn gray" id="missionNoBtn">🚪 Not today</button>
+        </div>
+      </div>`;
+    $('provModal').classList.add('show');
+    $('missionYesBtn').onclick=()=>{ body.classList.remove('scrolly'); openProvince(i, true); };
+    $('missionNoBtn').onclick=()=>{ body.classList.remove('scrolly'); $('provModal').classList.remove('show'); };
+    return;
+  }
   if(!claim && isRestDay()){
     body.innerHTML=`
       <div class="big-emoji">💤</div>
@@ -1966,6 +2001,7 @@ function renderLair(){
       <span style="font-size:.85rem;">$</span><input type="number" class="lval" data-i="${i}" value="${(b.val/100).toFixed(2)}" step="0.25" min="0.05" style="width:68px; border:2px solid #ddd0ab; border-radius:8px; padding:5px; font-family:inherit; text-align:center;">
       <label style="font-size:1rem;" title="${i===state.jewelAt?'The Blue Ruby Jewel is hidden here!':'Chest buried here?'}">${i===state.jewelAt&&t?'🔷':chestIcon(19)}<input type="checkbox" class="lchk" data-i="${i}" ${t?'checked':''}></label>
       <input type="number" class="lchv" data-i="${i}" value="${t?(t/100).toFixed(2):'1.00'}" step="0.25" min="0.25" style="width:68px; border:2px solid #ddd0ab; border-radius:8px; padding:5px; font-family:inherit; text-align:center; ${t?'':'opacity:.35;'}">
+      <textarea class="lmis" data-i="${i}" rows="1" placeholder="📜 Mission / directions for this province (optional)" style="flex:1 1 100%; border:2px solid #ddd0ab; border-radius:8px; padding:6px 8px; font-family:inherit; font-size:.85rem; resize:vertical; min-height:30px;">${escapeHtml(b.mission||'')}</textarea>
     </div>`;
   }).join('');
   body.innerHTML=`
@@ -1999,6 +2035,9 @@ function renderLair(){
   });
   body.querySelectorAll('.lchv').forEach(vEl=>{
     vEl.oninput=()=>{ const i=+vEl.dataset.i; if(state.treasure[i]!==undefined){ state.treasure[i]=Math.max(25,Math.round((parseFloat(vEl.value)||1)*100)); saveState(); } };
+  });
+  body.querySelectorAll('.lmis').forEach(tEl=>{
+    tEl.oninput=()=>{ const i=+tEl.dataset.i; cfg.beds[i].mission=tEl.value; saveCfg(); };
   });
   body.querySelectorAll('.lok').forEach(btn=>{
     btn.onclick=()=>{
