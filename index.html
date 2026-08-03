@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Shire Garden">
 <meta name="theme-color" content="#3a2c17">
 <title>🌿 The Shire Garden — The Family Weeding Game</title>
-<meta name="shire-version" content="33">
+<meta name="shire-version" content="34">
 <style>
   :root{
     --ink:#4a3a2a; --parch:#f2e8cf; --parch2:#e9dcba;
@@ -246,7 +246,7 @@
   </div>
 
   <div class="k-wrap">
-    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v33</span></div></div>
+    <div class="map-col"><div id="map"></div><div id="mapFooter">THE SHIRE GARDEN <span style="opacity:.45; font-size:11px; letter-spacing:2px;">&nbsp;· v34</span></div></div>
     <div class="side-col">
       <div class="standings">
         <h3 style="margin-bottom:4px;">🛡️ This Week's Conquest</h3>
@@ -1703,24 +1703,72 @@ function bedTier(i){
   return r<0.33?1:(r<0.66?2:3);
 }
 function sproutsFor(i){ return '🌱'.repeat(bedTier(i)); }
-/* The Weed Monster speaks in verse: wrap any mission into a rhyming two-line decree */
-function missionPoem(m){
-  const t=[
-    ["The Weed Monster stirs 'neath root and stone, and sends this quest to thee alone:", " — succeed, and the glory is thine own!"],
-    ["Hark, little gardener, the wild weeds creep — a vow was made and a vow to keep:", " — then home to thy gold and a hero's sleep!"],
-    ["A growl from the lair shakes leaf and vine — the Monster has drawn a battle line:", " — stand tall, brave soul, and the day is thine!"],
-    ["Beware, beware the tangled green, the hungriest garden ever seen:", " — and scrub the Shire bright and clean!"],
-    ["By moonlit scroll and monstrous claw, this quest is sealed in garden law:", " — the finest weeding ever saw!"],
-    ["The thorns grow bold, the thistles tower — the Monster names thy finest hour:", " — go show the weeds thy gardener's power!"],
-    ["From shadowed lair to sunlit bed, a challenge rings where none dare tread:", " — then glory, gold, and feasts ahead!"],
-    ["Rise, brave knight of rake and spade, the grandest quest was ever made:", " — and let no single weed evade!"],
-    ["The Monster grumbles, fierce and deep, o'er weeds that wake and roots that creep:", " — for gold is earned and thine to keep!"],
-    ["A scroll unfurled at break of day — the Weed Monster's will is on display:", " — then triumph, treasure, and shouts hooray!"],
+/* The Weed Monster speaks in verse: every province has its OWN Tolkien-style poem,
+   and the typed mission is retold in the tongue of old adventures */
+function enrichMission(m){
+  const swaps=[
+    [/\bcrab ?grass\b/gi,'the crawling crab-grass host'],
+    [/\bdandelions\b/gi,'the golden-crowned invaders'],
+    [/\bdandelion\b/gi,'a golden-crowned invader'],
+    [/\bthistles\b/gi,'the thistle-spears'],
+    [/\bthistle\b/gi,'a thistle-spear'],
+    [/\bweeds\b/gi,'weeds of the Shadow'],
+    [/\bleaves\b/gi,'leaves of fallen gold'],
+    [/\bgrass\b/gi,'grass of the wild meadows'],
+    [/\broots\b/gi,'roots of the deep dark'],
+    [/\brocks\b/gi,'old stones'],
+    [/\bbranches\b/gi,'boughs'],
+    [/\bbushes\b/gi,'bramble-thickets'],
+    [/\bvines\b/gi,'serpent-vines'],
+    [/\bgarden\b/gi,'garden-realm'],
+    [/\btrash\b/gi,'orc-leavings'],
+    [/\bbin\b/gi,'barrow'],
+    [/\bwheelbarrow\b/gi,'wain'],
+    [/\bpull out\b/gi,'cast out'],
+    [/\bpull up\b/gi,'tear from the deep earth'],
+    [/\bpull\b/gi,'cast out'],
+    [/\bpick up\b/gi,'gather'],
+    [/\brake\b/gi,'sweep'],
+    [/\bmow\b/gi,'reap'],
+    [/\btrim\b/gi,'shear'],
+    [/\bcut\b/gi,'hew'],
+    [/\bclean\b/gi,'make fair'],
+    [/\bwater\b/gi,'give drink to'],
   ];
-  let h=0; for(let k=0;k<m.length;k++) h=(h*31+m.charCodeAt(k))>>>0;
-  const [l1,l2]=t[h%t.length];
-  const body=m.trim().replace(/\s+/g,' ').replace(/[.!\s]+$/,'');
-  return [l1, body+l2];
+  let t=m;
+  swaps.forEach(([re,rep])=>{ t=t.replace(re,rep); });
+  t=t.trim().replace(/\s+/g,' ').replace(/[.!\s]+$/,'');
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+const POEM_FORMS=[
+  ["In {P} where the shadows creep,","dark tangles wake from wicked sleep.","The scroll commands — so swear the deed:","\u0001 —","and win the gold that heroes reap!"],
+  ["When morning gilds the eastern sky,","the horns of {P} sound on high.","This quest the Monster carved in stone:","\u0001 —","ride now, brave heart, thou goest alone!"],
+  ["Old roots run deep and thorns grow tall,","a green host masses at the wall.","One hope remains — so speaks the scroll:","\u0001 —","then {P} is freed, and saved are all!"],
+  ["Far over hills of tangled green,","a fouler patch was never seen.","Yet written here in monster-runes:","\u0001 —","go carve thy name in legend clean!"],
+  ["The moon rides pale o'er {P} fair,","but creeping things are stirring there.","Thy charge, brave soul, ere day is done:","\u0001 —","and stars shall crown thy valiant hair!"],
+  ["From lair below where growls the beast,","there comes decree from west to east:","\u0001!","Do this in {P}, sturdy knight,","and earn thy place at glory's feast!"],
+  ["Three realms of green, one path, one chance —","the thorn-spears wait with wicked lance.","The Monster's word is law this day:","\u0001 —","now to {P}! Advance! Advance!"],
+  ["No dragon's hoard, no wizard's fee","could match the gold that waits for thee.","But first the deed the scroll demands:","\u0001 —","then {P} shall sing thy victory!"],
+  ["The old trees whisper, slow and wise:","'A quest! A quest!' the wind replies.","In {P} must the deed be done:","\u0001 —","go now before the daylight dies!"],
+  ["Dark grows the tangle, deep the root,","the wild green marches, branch and shoot.","Stand fast! The scroll has named thy task:","\u0001 —","and thou shalt win the golden fruit!"],
+  ["A ring of weeds, one plot to free —","the fate of gardens rests with thee.","So reads the rune on monster-hide:","\u0001 —","march to {P} and victory!"],
+  ["O little warrior, swift and keen,","the bravest gardener ever seen —","the lair has spoken, hear it well:","\u0001 —","and cleanse {P} of creeping green!"],
+  ["Beyond the gate, past hedge and stile,","the wild things grin with thorny smile.","One deed shall break their crooked reign:","\u0001 —","then rest thee proud a happy while!"],
+  ["The watchtower horn sounds long and low —","in {P} walks the leafy foe.","Thy secret orders, sealed in wax:","\u0001 —","strike true, strike swift, and lay them low!"],
+  ["Not every soul who leaves the door","must face what thou must face — and more!","For thee alone this scroll was penned:","\u0001 —","then {P} is thine forevermore!"],
+  ["By barrow, brook, and beacon-light,","the Monster names thy noble fight:","\u0001!","Let {P} tremble at thy step,","and bring thee gold by fall of night!"],
+  ["The elder days have tales to tell","of heroes small who labored well.","Now write thine own in {P}'s earth:","\u0001 —","and ring the Shire's victory bell!"],
+  ["Cold blows the wind from mountains grey,","the garden-realm has lost its way.","But one command can turn the tide:","\u0001 —","be thou the dawn that saves the day!"],
+  ["Nine bright stars and one old oak,","and one small knight of garden-folk!","The lair decrees, the scroll is law:","\u0001 —","reclaim {P} and all it owns!"],
+  ["Under root and over stone,","the creeping green has claimed a throne.","Cast it down! The word is given:","\u0001 —","and {P} shall be thine own!"],
+  ["The kettle sings, the hearth burns bright,","but duty calls thee to the fight!","Ere supper-time this must be done:","\u0001 —","then home to feast, victorious knight!"],
+  ["A secret task, a whispered word,","by bee and bird and beetle heard:","\u0001!","Let none but thee in {P} tread","till every blade of grass is stirred!"],
+];
+function missionPoemHtml(m, bedIdx){
+  const task='<b>'+escapeHtml(enrichMission(m))+'</b>';
+  const P=(cfg.beds[bedIdx]&&(cfg.beds[bedIdx].fancy||cfg.beds[bedIdx].name))||'this province';
+  const form=POEM_FORMS[((bedIdx%POEM_FORMS.length)+POEM_FORMS.length)%POEM_FORMS.length];
+  return form.map(l=>escapeHtml(l.replace('{P}',P)).replace('\u0001',task));
 }
 function openProvince(i, missionAccepted){
   const b=cfg.beds[i];
@@ -1735,7 +1783,7 @@ function openProvince(i, missionAccepted){
         <div class="mission-seal">📜</div>
         <div class="mission-title">A Mission from the Weed Monster</div>
         <div style="font-size:.92rem; opacity:.75; font-style:italic;">for the province of ${escapeHtml(b.fancy||b.name)} · ${sproutsFor(i)}</div>
-        <div class="mission-text" style="text-align:center;">${missionPoem(mission).map(escapeHtml).join('<br>')}</div>
+        <div class="mission-text" style="text-align:center;">${missionPoemHtml(mission, i).join('<br>')}</div>
         <div class="btns">
           <button class="btn gold" id="missionYesBtn">⚔️ I accept this mission!</button>
           <button class="btn gray" id="missionNoBtn">🚪 Not today</button>
@@ -2324,7 +2372,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncPull
 })();
 
 /* ---------- self-updater: every device fetches new versions automatically ---------- */
-const APP_VER = 33;
+const APP_VER = 34;
 let updReloading=false;
 async function checkForUpdate(){
   if(updReloading || location.protocol==='file:') return;
